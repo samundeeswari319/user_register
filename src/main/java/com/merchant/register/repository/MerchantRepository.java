@@ -4,9 +4,11 @@ import com.merchant.register.model.Merchant;
 import com.merchant.register.model.UserRegisterData;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+@Repository
 public interface MerchantRepository extends MongoRepository<Merchant,String>{
     /*@Query("{ 'mid': ?0 }")
     Merchant findByMid(String mid);*/
