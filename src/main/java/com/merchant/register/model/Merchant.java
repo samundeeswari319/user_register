@@ -19,6 +19,7 @@ public class Merchant {
     public String name;
     public String mid;
     public HashMap<String,Object> requirements;
+    public String json_requirements;
     private String mobile_number;
     private String send_otp;
     private String last_verification_id;

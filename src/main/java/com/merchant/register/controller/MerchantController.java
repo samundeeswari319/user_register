@@ -1,5 +1,7 @@
 package com.merchant.register.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.merchant.register.common.APIResponse;
 import com.merchant.register.common.ErrorResponses;
 import com.merchant.register.common.InvalidException;
@@ -21,10 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.merchant.register.utils.Utils.extractTokenFromHeader;
 
@@ -72,6 +71,7 @@ public class MerchantController {
             model.setSend_otp("0");
             model.setLast_verification_id("0");
             model.setId(id);
+            model.setRequirements(null);
             authToken = jwtUtils.createToken(model);
             model.setToken(authToken);
             model.setMid(String.valueOf(id));
@@ -221,22 +221,68 @@ public class MerchantController {
         return apiResponse;
     }
 
-   /* @PostMapping("/register")
-    private APIResponse getRegisterData(@RequestHeader("Authorization") String token,@RequestBody Register register) throws IOException {
+    @PostMapping("/register_user")
+    private APIResponse userRegister(@RequestBody HashMap<String,Object> register) throws IOException {
         APIResponse apiResponse = new APIResponse();
-        if((token == null || token.isEmpty()) && (register.getMid() == null || register.getMid().isEmpty())){
-            throw new InvalidException(ErrorCode.RESOURCE_NOT_FOUND);
-        }
-        UserRegisterData userRegisterData = userRegisterRepo.findByMid(register.getMid());
-        if(userRegisterData!=null &&  userRegisterData.device_token.equals(extractTokenFromHeader(token))){
+        //String midL = register.get("mid").toString();
+        List<String> errors = new ArrayList<>();
+        Merchant merchant = merchantRepository.findByMid(authTokenModel.getUser_id());
+        if(merchant != null){
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                // Convert JSON string to Map
+                Map<String, Object> requirements = objectMapper.readValue(merchant.json_requirements, new TypeReference<Map<String, Object>>() {
+                });
 
-        }else {
-            apiResponse.setMsg("Authentication Error");
-            apiResponse.setStatus(false);
-            apiResponse.setData(new ErrorResponses(ErrorCode.INVALID_AUTHENTICATION));
-            apiResponse.setCode(StatusCode.FORBIDDEN.code);
-        }
+                register.forEach((key, value) -> {
+                    if(requirements.containsKey(key)){
+                        Object nameObject = requirements.get(key);
+                        // Check if it's a Map and cast
+                        if (nameObject instanceof Map) {
+                            Map<String, Object> nameMap = (Map<String, Object>) nameObject;
+                            boolean isMandatory = (boolean) nameMap.get("is_mandatory");
+                            if(isMandatory && register.get(key).equals("")){
+                                errors.add(ErrorCode.RESOURCE_NOT_FOUND.message);
+                            }/*else if(isMandatory && !register.get(key).equals("")){
+                                User user = new User();
+                                user.user_details = register;
+                                userRepository.save(user);
+                            }else if(!isMandatory && !register.get(key).equals("")){
+                                User user = new User();
+                                user.user_details = register;
+                                userRepository.save(user);
+                            }
+*/
+                        }
+                    }else{
+                        errors.add(ErrorCode.RESOURCE_NOT_FOUND.message);
+                    }
+                });
 
+                if(errors.isEmpty()){
+                    User user = new User();
+                    user.user_details = register;
+                    userRepository.save(user);
+                    apiResponse.setStatus(true);
+                    apiResponse.setData(user);
+                    apiResponse.setCode(StatusCode.SUCCESS.code);
+                }else{
+                    apiResponse.setStatus(false);
+                    apiResponse.setData(new ErrorResponses(ErrorCode.RESOURCE_NOT_FOUND));
+                    apiResponse.setCode(StatusCode.INTERNAL_SERVER_ERROR.code);
+                }
+            }catch (Exception e){
+                apiResponse.setMsg(e.getMessage());
+                apiResponse.setStatus(false);
+                apiResponse.setData(errors);
+                apiResponse.setCode(StatusCode.INTERNAL_SERVER_ERROR.code);
+            }
+            }else{
+                apiResponse.setMsg(authTokenModel.getUser_id());
+                apiResponse.setStatus(false);
+                apiResponse.setData(new ErrorResponses(ErrorCode.INVALID_AUTHENTICATION));
+                apiResponse.setCode(StatusCode.FORBIDDEN.code);
+            }
         return apiResponse;
-    }*/
+    }
 }
