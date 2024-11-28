@@ -1,5 +1,7 @@
 package com.merchant.register.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.merchant.register.common.APIResponse;
 import com.merchant.register.common.ErrorResponses;
 import com.merchant.register.common.InvalidException;
@@ -13,6 +15,7 @@ import com.merchant.register.model.UserRegisterData;
 import com.merchant.register.repository.MerchantRepository;
 import com.merchant.register.repository.UserRegisterRepo;
 import com.merchant.register.repository.UserRepository;
+import com.merchant.register.services.MerchantService;
 import com.merchant.register.services.SequenceGeneratorService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +48,9 @@ public class MerchantController {
 
     @Autowired
     AuthTokenModel authTokenModel;
+
+    @Autowired
+    private MerchantService merchantService;
 
     @PostMapping("/login/auth/create_merchant")
     public APIResponse createMerchant(@RequestBody Merchant model) {
@@ -106,54 +112,19 @@ public class MerchantController {
 
 
 
-    @PostMapping("edit_merchant/{mid}")
-    public APIResponse updateMerchant(@RequestBody Merchant updatedModel,@PathVariable("mid") String mid) {
-        APIResponse response = new APIResponse();
-        try {
-            Merchant existingModel = merchantRepository.findByMid(mid);
-            if (existingModel != null) {
-                System.out.println("Existing merchant ID: " + existingModel.id);
-                Merchant model = existingModel;
-                model.setName(updatedModel.getName());
-                model.setRequirements(updatedModel.getRequirements());
-                Merchant savedModel = merchantRepository.save(model);
-                response.setStatus(true);
-                response.setCode(200);
-                response.setData(savedModel);
-                response.setError(null);
-                response.setMsg("Merchant updated successfully.");
-            } else {
-                response.setStatus(false);
-                response.setCode(404);
-                response.setData(null);
-                response.setError("MERCHANT_NOT_FOUND");
-                response.setMsg("Merchant not found for the given ID.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.setStatus(false);
-            response.setCode(500);
-            response.setData(null);
-            response.setError("INTERNAL_SERVER_ERROR");
-            response.setMsg("An error occurred while updating the merchant: " + e.getMessage());
-        }
-        return response;
+    @PostMapping("/edit_merchant")
+    public APIResponse updateMerchant(@RequestParam String mid, @RequestBody Map<String, Object> updatedModel) throws JsonProcessingException {
+    Object jsonRequirements = updatedModel.get("json_requirements");
+    String jsonRequirementsString = new ObjectMapper().writeValueAsString(jsonRequirements);
+    Merchant merchant = new Merchant();
+    merchant.setJson_requirements(jsonRequirementsString);
+    return merchantService.updateMerchant(mid, merchant);
     }
 
-    @PostMapping("delete_merchant/{mid}")
-    public ResponseEntity<APIResponse> deleteMerchant(@PathVariable("mid") String mid) {
-        APIResponse response = new APIResponse();
-        Merchant merchant = merchantRepository.findByMid(mid);
-        if (merchant != null) {
-            merchantRepository.delete(merchant);
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(true);
-            response.setMsg("Merchant deleted successfully");
-        } else {
-            response.setCode(HttpStatus.NOT_FOUND.value());
-            response.setStatus(false);
-            response.setMsg("Merchant not found");
-        }
+
+    @PostMapping("/delete_merchant")
+    public ResponseEntity<APIResponse> deleteMerchantKey(@RequestParam String mid, @RequestParam String key) {
+        APIResponse response = merchantService.deleteMerchantKey(mid, key);
         return ResponseEntity.ok(response);
     }
 
@@ -175,15 +146,10 @@ public class MerchantController {
     }
 
     @PostMapping("/selected_fields")
-    private APIResponse getSelectedFields(@RequestBody HashMap<String,Object> fields){
-        APIResponse apiResponse = new APIResponse();
-        Merchant merchant = merchantRepository.findByMid(authTokenModel.user_id);
-        if(merchant != null){
-            //String midL = fields.get("mid").toString();
-            merchant.requirements = new HashMap<>(fields);
-            merchantRepository.save(merchant);
-        }
-        return apiResponse;
+    public APIResponse updateSelectedFields(
+            @RequestParam String id,
+            @RequestParam String jsonFilepath) {
+        return merchantService.updateSelectedFields(id, jsonFilepath);
     }
 
     @PostMapping("/register")

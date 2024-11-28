@@ -1,14 +1,25 @@
 package com.merchant.register.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.merchant.register.common.JsonRequirementsDeserializer;
+import com.merchant.register.common.JsonRequirementsSerializer;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @Document("merchant")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Merchant {
 
     @Transient
@@ -18,7 +29,9 @@ public class Merchant {
     public long id;
     public String name;
     public String mid;
-    public HashMap<String,Object> requirements;
+    @JsonSerialize(using = JsonRequirementsSerializer.class)
+    @JsonDeserialize(using = JsonRequirementsDeserializer.class)
+    public String json_requirements;
     private String mobile_number;
     private String send_otp;
     private String last_verification_id;
@@ -48,13 +61,6 @@ public class Merchant {
         this.mid = mid;
     }
 
-    public HashMap<String, Object> getRequirements() {
-        return requirements;
-    }
-
-    public void setRequirements(HashMap<String, Object> requirements) {
-        this.requirements = requirements;
-    }
 
     public String getSend_otp() {
         return send_otp;
