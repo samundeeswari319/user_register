@@ -150,7 +150,7 @@ public class MerchantController {
         return merchantService.updateSelectedFields(id, jsonFilepath);
     }
 
-    @PostMapping("/register")
+    /*@PostMapping("/register")
     private APIResponse userRegisterData(@RequestBody HashMap<String,Object> register) throws IOException {
         APIResponse apiResponse = new APIResponse();
             //String midL = register.get("mid").toString();
@@ -183,7 +183,7 @@ public class MerchantController {
                 apiResponse.setCode(StatusCode.FORBIDDEN.code);
             }
         return apiResponse;
-    }
+    }*/
 
     @PostMapping("/register_user")
     private APIResponse userRegister(@RequestBody HashMap<String,Object> register) throws IOException {

@@ -94,4 +94,12 @@ public class Merchant {
     public void setToken(String token) {
         this.token = token;
     }
+
+    public String getJson_requirements() {
+        return json_requirements;
+    }
+
+    public void setJson_requirements(String json_requirements) {
+        this.json_requirements = json_requirements;
+    }
 }
