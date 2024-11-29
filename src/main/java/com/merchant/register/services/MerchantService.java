@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -68,17 +69,18 @@ public class MerchantService {
             }
 
             ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, Object> existingJsonData = objectMapper.readValue(existingModel.getJson_requirements(), Map.class);
+
+            Map<String, Object> existingJsonData = new HashMap<>();
+            if (existingModel.getJson_requirements() != null && !existingModel.getJson_requirements().isEmpty()) {
+                existingJsonData = objectMapper.readValue(existingModel.getJson_requirements(), Map.class);
+            }
 
             Map<String, Object> updatedJsonData = objectMapper.readValue(updatedModel.getJson_requirements(), Map.class);
-
             existingJsonData.putAll(updatedJsonData);
 
             String updatedJsonString = objectMapper.writeValueAsString(existingJsonData);
 
-
             existingModel.setJson_requirements(updatedJsonString);
-
             Merchant savedModel = merchantRepository.save(existingModel);
 
             apiResponse.setStatus(true);

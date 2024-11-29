@@ -9,10 +9,7 @@ import com.merchant.register.common.InvalidException;
 import com.merchant.register.config.JwtUtils;
 import com.merchant.register.enumclass.ErrorCode;
 import com.merchant.register.enumclass.StatusCode;
-import com.merchant.register.model.AuthTokenModel;
-import com.merchant.register.model.Merchant;
-import com.merchant.register.model.User;
-import com.merchant.register.model.UserRegisterData;
+import com.merchant.register.model.*;
 import com.merchant.register.repository.MerchantRepository;
 import com.merchant.register.repository.UserRegisterRepo;
 import com.merchant.register.repository.UserRepository;
@@ -83,6 +80,7 @@ public class MerchantController {
             model.setSend_otp("0");
             model.setLast_verification_id("0");
             model.setId(id);
+            model.setJson_requirements(null);
             authToken = jwtUtils.createToken(model);
             model.setToken(authToken);
             model.setMid(String.valueOf(id));
@@ -118,18 +116,37 @@ public class MerchantController {
 
 
     @PostMapping("/edit_merchant")
-    public APIResponse updateMerchant(@RequestParam String mid, @RequestBody Map<String, Object> updatedModel) throws JsonProcessingException {
-    Object jsonRequirements = updatedModel.get("json_requirements");
+    public APIResponse updateMerchant(@RequestBody Map<String, Object> updatedModel) throws JsonProcessingException {
+        Object jsonRequirements = updatedModel.get("json_requirements");
     String jsonRequirementsString = new ObjectMapper().writeValueAsString(jsonRequirements);
     Merchant merchant = new Merchant();
     merchant.setJson_requirements(jsonRequirementsString);
-    return merchantService.updateMerchant(mid, merchant);
+    String userId = authTokenModel.getUser_id();
+    if (userId == null || userId.trim().isEmpty()) {
+        APIResponse response = new APIResponse();
+        response.setStatus(false);
+        response.setCode(400);
+        response.setMsg(ErrorCode.INVALID_USERID.code);
+        response.setError(null);
+        return response;
+    }
+
+    return merchantService.updateMerchant(userId, merchant);
     }
 
 
     @PostMapping("/delete_merchant")
-    public ResponseEntity<APIResponse> deleteMerchantKey(@RequestParam String mid, @RequestParam String key) {
-        APIResponse response = merchantService.deleteMerchantKey(mid, key);
+    public ResponseEntity<APIResponse> deleteMerchantKey( @RequestParam String key) {
+        String userId = authTokenModel.getUser_id();
+        if (userId == null || userId.trim().isEmpty()) {
+            APIResponse response = new APIResponse();
+            response.setStatus(false);
+            response.setCode(400);
+            response.setMsg(ErrorCode.INVALID_USERID.code);
+            response.setError(null);
+            return ResponseEntity.badRequest().body(response);
+        }
+        APIResponse response = merchantService.deleteMerchantKey(userId, key);
         return ResponseEntity.ok(response);
     }
 
@@ -152,9 +169,17 @@ public class MerchantController {
 
     @PostMapping("/selected_fields")
     public APIResponse updateSelectedFields(
-            @RequestParam String id,
             @RequestParam("jsonFilepath") MultipartFile file) {
-        return merchantService.updateSelectedFields(id, file);
+        String userId = authTokenModel.getUser_id();
+        if (userId == null || userId.trim().isEmpty()) {
+            APIResponse response = new APIResponse();
+            response.setStatus(false);
+            response.setCode(400);
+            response.setMsg(ErrorCode.INVALID_USERID.code);
+            response.setError("INVALID_USER_ID");
+            return response;
+        }
+        return merchantService.updateSelectedFields(userId, file);
     }
 
     /*@PostMapping("/register")
