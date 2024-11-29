@@ -9,10 +9,10 @@ import com.merchant.register.model.VerifyOtpRequest;
 import com.merchant.register.repository.MerchantRepository;
 import com.merchant.register.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,7 +27,9 @@ public class UserController {
     private UserRepository userRepository;
 
     @PostMapping("/get/user/data")
-    public APIResponse getUserData(@RequestBody UserFetchRequest request) {
+    public APIResponse getUserData(@RequestBody UserFetchRequest request,
+                                   @RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "20") int size) {
         APIResponse response = new APIResponse();
 
         try {
@@ -40,36 +42,31 @@ public class UserController {
                 return response;
             }
 
+            Pageable pageable = PageRequest.of(page, size);
+            Page<User> userPage;
+
             if (request.getApp_id() == null || request.getApp_id().isEmpty()) {
-                List<User> users = userRepository.findByMid(request.getMid());
-                if (users.isEmpty()) {
-                    response.setStatus(false);
-                    response.setCode(404);
-                    response.setData(null);
-                    response.setError(ErrorCode.SOMETHING_WENT_WRONG.message);
-                    response.setMsg("No data found for the provided MID.");
-                } else {
-                    response.setStatus(true);
-                    response.setCode(200);
-                    response.setData(users);
-                    response.setError(null);
-                    response.setMsg("Data fetched successfully.");
-                }
+                userPage = userRepository.findByMid(request.getMid(), pageable);
             } else {
-                List<User> users = userRepository.findByMidAndAppId(request.getMid(), request.getApp_id());
-                if (users.isEmpty()) {
-                    response.setStatus(false);
-                    response.setCode(404);
-                    response.setData(null);
-                    response.setError(ErrorCode.SOMETHING_WENT_WRONG.message);
-                    response.setMsg("No data found for the provided MID and App ID.");
-                } else {
-                    response.setStatus(true);
-                    response.setCode(200);
-                    response.setData(users);
-                    response.setError(null);
-                    response.setMsg("Data fetched successfully.");
-                }
+                userPage = userRepository.findByMidAndAppId(request.getMid(), request.getApp_id(), pageable);
+            }
+
+            if (userPage.isEmpty()) {
+                response.setStatus(false);
+                response.setCode(404);
+                response.setData(null);
+                response.setError(ErrorCode.SOMETHING_WENT_WRONG.message);
+                response.setMsg("No data found for the provided MID and App ID.");
+            } else {
+                response.setStatus(true);
+                response.setCode(200);
+                response.setData(userPage.getContent());
+                response.setError(null);
+                response.setMsg("Data fetched successfully.");
+                response.setTotalPages(userPage.getTotalPages());
+                response.setTotalElements(userPage.getTotalElements());
+                response.setPageNumber(userPage.getNumber());
+                response.setPageData(userPage.getNumberOfElements());
             }
         } catch (Exception e) {
             e.printStackTrace();
