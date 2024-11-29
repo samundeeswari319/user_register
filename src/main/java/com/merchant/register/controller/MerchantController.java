@@ -49,12 +49,11 @@ public class MerchantController {
     private MerchantService merchantService;
 
     @PostMapping("/login/auth/create_merchant")
-    public APIResponse createMerchant(@RequestBody Merchant model) {
-        String authToken;
+    public APIResponse createMerchant(@RequestBody MerchantDTO model) {
         APIResponse response = new APIResponse();
 
         try {
-            if(model.getApp_id() == null || model.getApp_name() == null){
+            if(model.getApp_id() == null || model.getApp_id().isEmpty() || model.getApp_name() == null){
                 response.setStatus(false);
                 response.setData(new ErrorResponses(ErrorCode.RESOURCE_NOT_FOUND));
                 response.setCode(StatusCode.INTERNAL_SERVER_ERROR.code);
@@ -76,15 +75,8 @@ public class MerchantController {
                 response.setMsg("Duplicate merchant ID.");
                 return response;
             }*/
-            long id = sequenceGeneratorService.generateSequence(Merchant.SEQUENCE_NAME);
-            model.setSend_otp("0");
-            model.setLast_verification_id("0");
-            model.setId(id);
-            model.setJson_requirements(null);
-            authToken = jwtUtils.createToken(model);
-            model.setToken(authToken);
-            model.setMid(String.valueOf(id));
-            Merchant savedModel = merchantRepository.save(model);
+            Merchant merchant = updateMerchant(model);
+            Merchant savedModel = merchantRepository.save(merchant);
             response.setStatus(true);
             response.setCode(200);
             response.setData(savedModel);
@@ -100,6 +92,24 @@ public class MerchantController {
         }
 
         return response;
+    }
+
+    private Merchant updateMerchant(MerchantDTO merchantDTO){
+        String authToken;
+        Merchant model = new Merchant();
+        long id = sequenceGeneratorService.generateSequence(Merchant.SEQUENCE_NAME);
+        model.setSend_otp("0");
+        model.setLast_verification_id("0");
+        model.setId(id);
+        model.setJson_requirements(null);
+        model.setMobile_number(merchantDTO.getMobile_number());
+        model.setName(merchantDTO.getName());
+        model.setApp_name(merchantDTO.getApp_name());
+        authToken = jwtUtils.createToken(model);
+        model.setToken(authToken);
+        model.setMid(String.valueOf(id));
+        model.setApp_id(Collections.singletonList(merchantDTO.app_id));
+        return model;
     }
 
     @PostMapping("/add_register_data")
@@ -222,6 +232,8 @@ public class MerchantController {
         APIResponse apiResponse = new APIResponse();
         //String midL = register.get("mid").toString();
         List<String> errors = new ArrayList<>();
+        HashMap<String, Object> db_requirement = new HashMap<>();
+        User user = new User();
         Merchant merchant = merchantRepository.findByMid(authTokenModel.getUser_id());
         if(merchant != null){
             ObjectMapper objectMapper = new ObjectMapper();
@@ -230,9 +242,16 @@ public class MerchantController {
                 Map<String, Object> requirements = objectMapper.readValue(merchant.json_requirements, new TypeReference<Map<String, Object>>() {
                 });
 
+                if(register.containsKey("app_id")){
+                    user.setApp_id(String.valueOf(register.get("app_id")));
+                }else{
+                    errors.add(ErrorCode.RESOURCE_NOT_FOUND.message);
+                }
+
                 requirements.forEach((key, value) -> {
                     if(register.containsKey(key)){
                         Object nameObject = requirements.get(key);
+                        db_requirement.put(key, register.get(key));
                         // Check if it's a Map and cast
                         if (nameObject instanceof Map) {
                             Map<String, Object> nameMap = (Map<String, Object>) nameObject;
@@ -248,12 +267,10 @@ public class MerchantController {
 
                 if(errors.isEmpty()){
                     long id = sequenceGeneratorService.generateSequence(Merchant.SEQUENCE_NAME);
-                    User user = new User();
                     user.setId(id);
                     user.setMid(merchant.mid);
-                    user.setApp_id(merchant.getApp_id());
                     user.setApp_name(merchant.getApp_name());
-                    user.user_details = register;
+                    user.user_details = db_requirement;
                     userRepository.save(user);
                     apiResponse.setStatus(true);
                     apiResponse.setData(user);
