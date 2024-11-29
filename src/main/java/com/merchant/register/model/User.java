@@ -16,6 +16,22 @@ public class User {
     public static final String SEQUENCE_NAME = "merchant_sequence";
 
     @Id
-    public int id;
+    public long id;
     public HashMap<String,Object> user_details;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public HashMap<String, Object> getUser_details() {
+        return user_details;
+    }
+
+    public void setUser_details(HashMap<String, Object> user_details) {
+        this.user_details = user_details;
+    }
 }

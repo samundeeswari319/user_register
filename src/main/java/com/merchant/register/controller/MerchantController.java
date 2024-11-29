@@ -56,6 +56,12 @@ public class MerchantController {
         APIResponse response = new APIResponse();
 
         try {
+            if(model.getApp_id() == null || model.getApp_name() == null){
+                response.setStatus(false);
+                response.setData(new ErrorResponses(ErrorCode.RESOURCE_NOT_FOUND));
+                response.setCode(StatusCode.INTERNAL_SERVER_ERROR.code);
+                return response;
+            }
             /*if (model.getMerchant_id() == null || model.getMerchant_id().isEmpty()) {
                 response.setStatus(false);
                 response.setCode(400);
@@ -198,8 +204,8 @@ public class MerchantController {
                 Map<String, Object> requirements = objectMapper.readValue(merchant.json_requirements, new TypeReference<Map<String, Object>>() {
                 });
 
-                register.forEach((key, value) -> {
-                    if(requirements.containsKey(key)){
+                requirements.forEach((key, value) -> {
+                    if(register.containsKey(key)){
                         Object nameObject = requirements.get(key);
                         // Check if it's a Map and cast
                         if (nameObject instanceof Map) {
@@ -207,16 +213,7 @@ public class MerchantController {
                             boolean isMandatory = (boolean) nameMap.get("is_mandatory");
                             if(isMandatory && register.get(key).equals("")){
                                 errors.add(ErrorCode.RESOURCE_NOT_FOUND.message);
-                            }/*else if(isMandatory && !register.get(key).equals("")){
-                                User user = new User();
-                                user.user_details = register;
-                                userRepository.save(user);
-                            }else if(!isMandatory && !register.get(key).equals("")){
-                                User user = new User();
-                                user.user_details = register;
-                                userRepository.save(user);
                             }
-*/
                         }
                     }else{
                         errors.add(ErrorCode.RESOURCE_NOT_FOUND.message);
@@ -224,7 +221,9 @@ public class MerchantController {
                 });
 
                 if(errors.isEmpty()){
+                    long id = sequenceGeneratorService.generateSequence(Merchant.SEQUENCE_NAME);
                     User user = new User();
+                    user.setId(id);
                     user.user_details = register;
                     userRepository.save(user);
                     apiResponse.setStatus(true);
@@ -242,7 +241,7 @@ public class MerchantController {
                 apiResponse.setCode(StatusCode.INTERNAL_SERVER_ERROR.code);
             }
             }else{
-                apiResponse.setMsg(authTokenModel.getUser_id());
+                apiResponse.setMsg("Merchant Not found");
                 apiResponse.setStatus(false);
                 apiResponse.setData(new ErrorResponses(ErrorCode.INVALID_AUTHENTICATION));
                 apiResponse.setCode(StatusCode.FORBIDDEN.code);

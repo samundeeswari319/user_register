@@ -36,6 +36,8 @@ public class Merchant {
     private String send_otp;
     private String last_verification_id;
     private String token;
+    private String app_id;
+    private String app_name;
 
     public long getId() {
         return id;
@@ -101,5 +103,21 @@ public class Merchant {
 
     public void setJson_requirements(String json_requirements) {
         this.json_requirements = json_requirements;
+    }
+
+    public String getApp_id() {
+        return app_id;
+    }
+
+    public void setApp_id(String app_id) {
+        this.app_id = app_id;
+    }
+
+    public String getApp_name() {
+        return app_name;
+    }
+
+    public void setApp_name(String app_name) {
+        this.app_name = app_name;
     }
 }

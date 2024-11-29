@@ -59,7 +59,7 @@
     }
   },
   "CD1": {
-    "paramName": "Consumer_ID",
+    "param_name": "Consumer_ID",
     "is_mandatory": true
   }
 }
