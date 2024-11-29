@@ -38,7 +38,6 @@ public class SecurityConfig  {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/login/auth/**").permitAll()
-                        .requestMatchers("/selected_fields","/edit_merchant","/delete_merchant").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement((session) -> session
