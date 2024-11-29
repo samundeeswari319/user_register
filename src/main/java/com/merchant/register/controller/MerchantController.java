@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
@@ -152,8 +153,8 @@ public class MerchantController {
     @PostMapping("/selected_fields")
     public APIResponse updateSelectedFields(
             @RequestParam String id,
-            @RequestParam String jsonFilepath) {
-        return merchantService.updateSelectedFields(id, jsonFilepath);
+            @RequestParam("jsonFilepath") MultipartFile file) {
+        return merchantService.updateSelectedFields(id, file);
     }
 
     /*@PostMapping("/register")

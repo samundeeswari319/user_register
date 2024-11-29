@@ -9,6 +9,7 @@ import com.merchant.register.model.Merchant;
 import com.merchant.register.repository.MerchantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.File;
@@ -23,17 +24,19 @@ public class MerchantService {
 
 
 
-    public APIResponse updateSelectedFields(String id, String jsonFilepath) {
+    public APIResponse updateSelectedFields(String id, MultipartFile file) {
         APIResponse apiResponse = new APIResponse();
 
         try {
-            Map<String, Object> jsonData = loadJsonDataFromFile(jsonFilepath);
+            // Load JSON data from uploaded file
+            Map<String, Object> jsonData = loadJsonDataFromFile(file);
             if (jsonData == null) {
                 apiResponse.setStatus(false);
                 apiResponse.setMsg("Failed to read JSON file.");
                 return apiResponse;
             }
 
+            // Retrieve merchant by ID
             Merchant merchant = merchantRepository.findByMid(id);
             if (merchant == null) {
                 apiResponse.setStatus(false);
@@ -132,12 +135,11 @@ public class MerchantService {
     }
 
 
-    private Map<String, Object> loadJsonDataFromFile(String filePath) {
+    private Map<String, Object> loadJsonDataFromFile(MultipartFile file) {
         try {
-            File file = new File(filePath);
             ObjectMapper objectMapper = new ObjectMapper();
-
-            return objectMapper.readValue(file, Map.class);
+            // Parse JSON content directly from MultipartFile input stream
+            return objectMapper.readValue(file.getInputStream(), Map.class);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
