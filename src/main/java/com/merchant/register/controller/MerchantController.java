@@ -250,6 +250,9 @@ public class MerchantController {
                     long id = sequenceGeneratorService.generateSequence(Merchant.SEQUENCE_NAME);
                     User user = new User();
                     user.setId(id);
+                    user.setMid(merchant.mid);
+                    user.setApp_id(merchant.getApp_id());
+                    user.setApp_name(merchant.getApp_name());
                     user.user_details = register;
                     userRepository.save(user);
                     apiResponse.setStatus(true);
