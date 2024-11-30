@@ -3,6 +3,7 @@ package com.merchant.register.enumclass;
 public enum StatusCode {
     SUCCESS(200),
     FAILURE(400),
+    USER_NOT_FOUND(401),
     INTERNAL_SERVER_ERROR(500),
     FORBIDDEN(403);
 
